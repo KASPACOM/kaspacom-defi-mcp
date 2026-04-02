@@ -13,6 +13,12 @@ export interface TokenInfo {
   decimals: number;
 }
 
+export interface NetworkFeatures {
+  dex: boolean;
+  lending: boolean;
+  launchpad: boolean;
+}
+
 export interface NetworkContracts {
   wkas: string;
   dex: {
@@ -35,6 +41,8 @@ export interface NetworkConfig {
   chainId: number;
   rpc: string;
   explorer: string;
+  subgraphUrl: string;
+  features: NetworkFeatures;
   contracts: NetworkContracts;
   tokens: Record<string, TokenInfo>;
 }
@@ -79,6 +87,12 @@ export const GALLEON_TESTNET: NetworkConfig = {
   chainId: 38836,
   rpc: "https://galleon-testnet.igralabs.com:8545",
   explorer: "https://explorer.galleon-testnet.igralabs.com",
+  subgraphUrl: "https://graph-galleon.kaspa.com",
+  features: {
+    dex: true,
+    lending: true,
+    launchpad: true,
+  },
   contracts: {
     wkas: "0x394C68684F9AFCEb9b804531EF07a864E8081738",
     dex: {
@@ -98,7 +112,7 @@ export const GALLEON_TESTNET: NetworkConfig = {
   tokens: GALLEON_TOKENS,
 };
 
-// ─── IGRA Mainnet (chainId 38833) — stub ──────────────────────────────────────
+// ─── IGRA Mainnet (chainId 38833) ────────────────────────────────────────────
 
 const IGRA_MAINNET_TOKENS: Record<string, TokenInfo> = {
   WKAS: {
@@ -106,7 +120,6 @@ const IGRA_MAINNET_TOKENS: Record<string, TokenInfo> = {
     address: "0x17Ec7E1768c813E2a3a9b0f94A35605CA520C242",
     decimals: 18,
   },
-  // Additional mainnet tokens TBD
 };
 
 export const IGRA_MAINNET: NetworkConfig = {
@@ -114,6 +127,12 @@ export const IGRA_MAINNET: NetworkConfig = {
   chainId: 38833,
   rpc: "https://rpc.igralabs.com:8545",
   explorer: "https://explorer.igralabs.com",
+  subgraphUrl: "https://graph-igra.kaspa.com",
+  features: {
+    dex: true,
+    lending: false,
+    launchpad: true,
+  },
   contracts: {
     wkas: "0x17Ec7E1768c813E2a3a9b0f94A35605CA520C242",
     dex: {
@@ -122,30 +141,117 @@ export const IGRA_MAINNET: NetworkConfig = {
       routerPermitFee: "0xDD1aBB133D027f4F67571b5bEEDC9cd9a93C13Ca",
     },
     lending: {
-      // Mainnet lending addresses TBD
-      pool: "0x0000000000000000000000000000000000000000",
-      oracle: "0x0000000000000000000000000000000000000000",
-      poolAddressesProvider: "0x0000000000000000000000000000000000000000",
-      uiPoolDataProvider: "0x0000000000000000000000000000000000000000",
-      poolDataProvider: "0x0000000000000000000000000000000000000000",
-      wrappedTokenGateway: "0x0000000000000000000000000000000000000000",
+      // Aave not yet deployed on Igra Mainnet
+      pool: "",
+      oracle: "",
+      poolAddressesProvider: "",
+      uiPoolDataProvider: "",
+      poolDataProvider: "",
+      wrappedTokenGateway: "",
     },
   },
   tokens: IGRA_MAINNET_TOKENS,
 };
 
+// ─── Kasplex Mainnet (chainId 202555) ────────────────────────────────────────
+
+const KASPLEX_MAINNET_TOKENS: Record<string, TokenInfo> = {
+  WKAS: {
+    symbol: "WKAS",
+    address: "0x2c2Ae87Ba178F48637acAe54B87c3924F544a83e",
+    decimals: 18,
+  },
+  ZEAL: {
+    symbol: "ZEAL",
+    address: "0xb7a95035618354d9adfc49eca49f38586b624040",
+    decimals: 18,
+  },
+  NACHO: {
+    symbol: "NACHO",
+    address: "0x9a5a144290dffa24c6c7aa8ca9a62319e60973d8",
+    decimals: 18,
+  },
+  KASPY: {
+    symbol: "KASPY",
+    address: "0x58AC2306566074Cc8C1c7704B53D7D2B6A656ca8",
+    decimals: 18,
+  },
+  WOLFY: {
+    symbol: "WOLFY",
+    address: "0xaf109de38a3e9c78260d8f02016dd1cb2fa2d168",
+    decimals: 18,
+  },
+  CRUMBS: {
+    symbol: "CRUMBS",
+    address: "0x7420872D0F2A6b6a3C87dE0D2a4b1C08C7A49f8d",
+    decimals: 18,
+  },
+  KASMO: {
+    symbol: "KASMO",
+    address: "0x31e8aea3259e357042c8fd791250c108e2d27728",
+    decimals: 18,
+  },
+  KPAW: {
+    symbol: "KPAW",
+    address: "0x2751193fA6e3A6C8c0D9c5eB1765c81e5b4aBc31",
+    decimals: 18,
+  },
+  FUND: {
+    symbol: "FUND",
+    address: "0xE98f85b036A1f7d6A59cF6A7f99f89A76b85F9f1",
+    decimals: 18,
+  },
+};
+
+export const KASPLEX_MAINNET: NetworkConfig = {
+  name: "kasplex",
+  chainId: 202555,
+  rpc: "https://evmrpc.kasplex.org",
+  explorer: "https://explorer.kasplex.org/",
+  subgraphUrl: "https://graph-kasplex.kaspa.com",
+  features: {
+    dex: true,
+    lending: true,
+    launchpad: true,
+  },
+  contracts: {
+    wkas: "0x2c2Ae87Ba178F48637acAe54B87c3924F544a83e",
+    dex: {
+      factory: "0xa9CBa43A407c9Eb30933EA21f7b9D74A128D613c",
+      router: "0x3a1f0bD164fe9D8fa18Da5abAB352dC634CA5F10",
+      routerPermitFee: "0x4c5BEaAE83577E3a117ce2F477fC42a1EA39A8a3",
+    },
+    lending: {
+      oracle: "0x6f10A47E2Df6138a36Bc785DA927Ea4072fd4c8f",
+      pool: "0x631BC5c362ce203B6043844f93f2c67D23a87994",
+      poolAddressesProvider: "0xEf0a017368a8C179895Ffff65C731510eB28d964",
+      uiPoolDataProvider: "0xd1b82017FAA537C1064B111E597D5003a66A23Fb",
+      poolDataProvider: "0x22B9bDEA931cE0b137DAEf80B2228a288ba05835",
+      wrappedTokenGateway: "0x0df0Ff6bBC7F5F881cbA5310Ef90b033d47470c2",
+    },
+  },
+  tokens: KASPLEX_MAINNET_TOKENS,
+};
+
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-const NETWORKS: Record<string, NetworkConfig> = {
+export const NETWORKS: Record<string, NetworkConfig> = {
   galleon: GALLEON_TESTNET,
   testnet: GALLEON_TESTNET, // alias
   igra: IGRA_MAINNET,
   mainnet: IGRA_MAINNET, // alias
+  kasplex: KASPLEX_MAINNET,
 };
+
+export const CANONICAL_NETWORKS: NetworkConfig[] = [
+  GALLEON_TESTNET,
+  IGRA_MAINNET,
+  KASPLEX_MAINNET,
+];
 
 /**
  * Get a network config by name. Throws if unknown.
- * Accepts: "galleon", "testnet", "igra", "mainnet"
+ * Accepts: "galleon", "testnet", "igra", "mainnet", "kasplex"
  */
 export function getNetwork(name: string): NetworkConfig {
   const key = name.toLowerCase();
@@ -166,6 +272,20 @@ export function getToken(
   symbol: string
 ): TokenInfo | undefined {
   return network.tokens[symbol.toUpperCase()];
+}
+
+export function listNetworks(): NetworkConfig[] {
+  return CANONICAL_NETWORKS;
+}
+
+export function getTokenByAddress(
+  network: NetworkConfig,
+  address: string
+): TokenInfo | undefined {
+  const lowerAddress = address.toLowerCase();
+  return Object.values(network.tokens).find(
+    (token) => token.address.toLowerCase() === lowerAddress
+  );
 }
 
 /**

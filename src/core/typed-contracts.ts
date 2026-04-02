@@ -19,6 +19,7 @@ const ERC20_ABI = [
   "function allowance(address owner, address spender) view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function symbol() view returns (string)",
+  "function totalSupply() view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)",
 ];
 
@@ -92,6 +93,10 @@ export interface Erc20Contract {
   encodeSymbol(): string;
   /** decode symbol result */
   decodeSymbol(data: string): string;
+  /** encode totalSupply() calldata */
+  encodeTotalSupply(): string;
+  /** decode totalSupply result */
+  decodeTotalSupply(data: string): bigint;
 }
 
 export function erc20(address: string): Erc20Contract & { address: string } {
@@ -109,6 +114,8 @@ export function erc20(address: string): Erc20Contract & { address: string } {
     decodeDecimals: (data) => Number(decodeResult(ERC20_IFACE, "decimals", data)[0]),
     encodeSymbol: () => ERC20_IFACE.encodeFunctionData("symbol", []),
     decodeSymbol: (data) => String(decodeResult(ERC20_IFACE, "symbol", data)[0]),
+    encodeTotalSupply: () => ERC20_IFACE.encodeFunctionData("totalSupply", []),
+    decodeTotalSupply: (data) => BigInt(decodeResult(ERC20_IFACE, "totalSupply", data)[0]),
   };
 }
 

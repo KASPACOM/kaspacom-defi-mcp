@@ -1,0 +1,76 @@
+import type { NetworkConfig } from "../contracts.js";
+import type { RpcClient } from "../rpc.js";
+import { getDexSubgraphEndpoint, querySubgraph } from "../subgraph.js";
+import { formatDecimal, success, failure, type ToolResult } from "./shared.js";
+
+interface PairNode {
+  id: string;
+  token0: { id: string; symbol: string; name: string; decimals: string };
+  token1: { id: string; symbol: string; name: string; decimals: string };
+  reserve0: string;
+  reserve1: string;
+  reserveUSD: string;
+  volumeUSD: string;
+  token0Price: string;
+  token1Price: string;
+}
+
+interface PairsResponse {
+  pairs: PairNode[];
+}
+
+const PAIRS_QUERY = `
+{
+  pairs(first: 100, orderBy: reserveUSD, orderDirection: desc) {
+    id
+    token0 { id symbol name decimals }
+    token1 { id symbol name decimals }
+    reserve0
+    reserve1
+    reserveUSD
+    volumeUSD
+    token0Price
+    token1Price
+  }
+}`;
+
+export async function getPairs(
+  params: Record<string, unknown>,
+  network: NetworkConfig,
+  _rpcClient: RpcClient
+): Promise<ToolResult> {
+  try {
+    const rawLimit = typeof params.limit === "number" ? params.limit : Number(params.limit ?? 20);
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(100, rawLimit)) : 20;
+    const endpoint = getDexSubgraphEndpoint(network);
+    const data = await querySubgraph<PairsResponse>(endpoint, PAIRS_QUERY);
+
+    return success(network, {
+      endpoint,
+      total: data.pairs.length,
+      pairs: data.pairs.slice(0, limit).map((pair) => ({
+        address: pair.id,
+        token0: {
+          address: pair.token0.id,
+          symbol: pair.token0.symbol,
+          name: pair.token0.name,
+          decimals: Number(pair.token0.decimals),
+          reserve: formatDecimal(Number(pair.reserve0)),
+          priceInToken1: formatDecimal(Number(pair.token0Price)),
+        },
+        token1: {
+          address: pair.token1.id,
+          symbol: pair.token1.symbol,
+          name: pair.token1.name,
+          decimals: Number(pair.token1.decimals),
+          reserve: formatDecimal(Number(pair.reserve1)),
+          priceInToken0: formatDecimal(Number(pair.token1Price)),
+        },
+        reserveUSD: formatDecimal(Number(pair.reserveUSD), 2),
+        volumeUSD: formatDecimal(Number(pair.volumeUSD), 2),
+      })),
+    });
+  } catch (error: unknown) {
+    return failure(network, `getPairs failed: ${String(error)}`);
+  }
+}

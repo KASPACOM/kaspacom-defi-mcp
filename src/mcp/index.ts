@@ -2,7 +2,7 @@
 /**
  * KaspaCom DeFi MCP Server
  *
- * Phase 1: Shell with all 15 tools registered (implementations in Phase 2)
+ * Phase 2: Read tools implemented, write tools still stubbed
  * - Reads MCP_WALLET_KEY from env (optional for read-only tools)
  * - Exposes HTTP health endpoint on port 3100
  * - Connects via stdio transport (standard MCP)
@@ -16,6 +16,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import * as http from "http";
 import { getNetwork } from "../core/contracts.js";
+import { executeReadTool } from "../core/tools/index.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ const TOOLS = [
       properties: {
         network: {
           type: "string",
-          description: "Network name: 'galleon' (testnet) or 'igra' (mainnet). Default: galleon.",
+          description: "Network name: 'galleon', 'igra', or 'kasplex'. Default: galleon.",
         },
         limit: {
           type: "number",
@@ -337,7 +338,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   }
 
-  // Phase 1: Return structured placeholder for all tools
+  const readResult = await executeReadTool(name, (args as Record<string, unknown>) ?? {}, net);
+  if (readResult) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(readResult, null, 2),
+        },
+      ],
+      isError: !readResult.ok,
+    };
+  }
+
   return {
     content: [
       {
@@ -347,7 +360,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           network: net.name,
           chainId: net.chainId,
           status: "not_implemented",
-          message: `Tool "${name}" is registered but not yet implemented. Phase 2 will add full execution logic.`,
+          message: `Write tool "${name}" is registered but not yet implemented.`,
           args,
         }, null, 2),
       },

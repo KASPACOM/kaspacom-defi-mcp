@@ -2,20 +2,12 @@
 /**
  * KaspaCom DeFi CLI
  *
- * Phase 1: Command shell with all subcommands registered.
- * Implementations come in Phase 2.
- *
- * Usage:
- *   kaspacom-defi [command] [options]
- *
- * Global flags:
- *   --network  galleon|igra  (default: galleon)
- *   --wallet   path/to/keyfile or env var name
- *   --json     output raw JSON
+ * Phase 2: read tools implemented, write tools remain stubbed.
  */
 
 import { Command } from "commander";
 import { getNetwork } from "../core/contracts.js";
+import { executeReadTool } from "../core/tools/index.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,10 +25,24 @@ function notImplemented(cmd: string, opts: Record<string, unknown>, json: boolea
   const msg = {
     command: cmd,
     status: "not_implemented",
-    message: `"${cmd}" is registered but not yet implemented. Phase 2 will add execution logic.`,
+    message: `"${cmd}" is registered but not yet implemented.`,
     options: opts,
   };
   output(json ? msg : `[not implemented] ${cmd}`, json);
+}
+
+async function runReadTool(
+  name: string,
+  params: Record<string, unknown>,
+  json: boolean
+): Promise<void> {
+  const opts = program.opts();
+  const network = getNetwork(opts.network as string);
+  const result = await executeReadTool(name, params, network);
+  output(result ?? { ok: false, error: `Unknown tool: ${name}` }, json);
+  if (result && !result.ok) {
+    process.exitCode = 1;
+  }
 }
 
 // ─── Program ──────────────────────────────────────────────────────────────────
@@ -45,9 +51,9 @@ const program = new Command();
 
 program
   .name("kaspacom-defi")
-  .description("KaspaCom DeFi CLI — interact with DEX, Lending, and Launchpad on IGRA")
+  .description("KaspaCom DeFi CLI — interact with DEX, Lending, and Launchpad on IGRA/Kasplex")
   .version("0.1.0")
-  .option("-n, --network <name>", "Network: galleon (testnet) or igra (mainnet)", "galleon")
+  .option("-n, --network <name>", "Network: galleon, igra, kasplex", "galleon")
   .option("-w, --wallet <key>", "Private key or env var name for write operations")
   .option("-j, --json", "Output raw JSON", false);
 
@@ -57,20 +63,26 @@ program
   .command("getPairs")
   .description("List all DEX liquidity pairs with reserves")
   .option("--limit <n>", "Max pairs to return", "20")
-  .action((cmdOpts) => {
+  .action(async (cmdOpts) => {
     const opts = program.opts();
-    const net = getNetwork(opts.network as string);
-    if (!opts.json) console.log(`Network: ${net.name} (chainId: ${net.chainId})`);
-    notImplemented("getPairs", { ...cmdOpts, network: opts.network }, opts.json as boolean);
+    await runReadTool(
+      "getPairs",
+      { ...cmdOpts, limit: Number(cmdOpts.limit), network: opts.network },
+      opts.json as boolean
+    );
   });
 
 program
   .command("getTokenPrice <token>")
-  .description("Get token price in USD or relative to another token")
+  .description("Get token price in USD")
   .option("--quote <symbol>", "Quote token symbol", "USDC")
-  .action((token: string, cmdOpts) => {
+  .action(async (token: string, cmdOpts) => {
     const opts = program.opts();
-    notImplemented("getTokenPrice", { token, ...cmdOpts, network: opts.network }, opts.json as boolean);
+    await runReadTool(
+      "getTokenPrice",
+      { token, ...cmdOpts, network: opts.network },
+      opts.json as boolean
+    );
   });
 
 program
@@ -127,18 +139,17 @@ program
 program
   .command("getMarkets")
   .description("List all Aave lending markets with rates and TVL")
-  .action((_cmdOpts) => {
+  .action(async () => {
     const opts = program.opts();
-    notImplemented("getMarkets", { network: opts.network }, opts.json as boolean);
+    await runReadTool("getMarkets", { network: opts.network }, opts.json as boolean);
   });
 
 program
-  .command("getPosition [address]")
-  .description("Get a wallet's lending position (health factor, supplied, borrowed)")
-  .action((address: string | undefined, _cmdOpts) => {
+  .command("getPosition <address>")
+  .description("Get a wallet's lending position")
+  .action(async (address: string) => {
     const opts = program.opts();
-    const addr = address ?? "(from wallet key)";
-    notImplemented("getPosition", { address: addr, network: opts.network }, opts.json as boolean);
+    await runReadTool("getPosition", { address, network: opts.network }, opts.json as boolean);
   });
 
 program
@@ -188,9 +199,9 @@ program
 program
   .command("getActiveLaunches")
   .description("List all active LFG Launchpad token launches")
-  .action((_cmdOpts) => {
+  .action(async () => {
     const opts = program.opts();
-    notImplemented("getActiveLaunches", { network: opts.network }, opts.json as boolean);
+    await runReadTool("getActiveLaunches", { network: opts.network }, opts.json as boolean);
   });
 
 program
@@ -225,12 +236,11 @@ program
 // ─── Portfolio commands ───────────────────────────────────────────────────────
 
 program
-  .command("getPortfolio [address]")
+  .command("getPortfolio <address>")
   .description("Get a complete portfolio summary: balances, LP positions, lending position")
-  .action((address: string | undefined, _cmdOpts) => {
+  .action(async (address: string) => {
     const opts = program.opts();
-    const addr = address ?? "(from wallet key)";
-    notImplemented("getPortfolio", { address: addr, network: opts.network }, opts.json as boolean);
+    await runReadTool("getPortfolio", { address, network: opts.network }, opts.json as boolean);
   });
 
 // ─── Info commands ────────────────────────────────────────────────────────────
@@ -238,30 +248,11 @@ program
 program
   .command("getProtocolInfo")
   .description("Show protocol overview: contracts, tokens, network details")
-  .action((_cmdOpts) => {
+  .action(async () => {
     const opts = program.opts();
-    const net = getNetwork(opts.network as string);
-    if (opts.json) {
-      output({
-        network: net.name,
-        chainId: net.chainId,
-        rpc: net.rpc,
-        explorer: net.explorer,
-        contracts: net.contracts,
-        tokens: Object.keys(net.tokens),
-      }, true);
-    } else {
-      console.log(`\nKaspaCom DeFi Protocol — ${net.name} (chainId: ${net.chainId})`);
-      console.log(`RPC:      ${net.rpc}`);
-      console.log(`Explorer: ${net.explorer}`);
-      console.log(`\nContracts:`);
-      console.log(`  DEX Factory:    ${net.contracts.dex.factory}`);
-      console.log(`  DEX Router:     ${net.contracts.dex.router}`);
-      console.log(`  Aave Pool:      ${net.contracts.lending.pool}`);
-      console.log(`\nTokens: ${Object.keys(net.tokens).join(", ")}`);
-    }
+    await runReadTool("getProtocolInfo", { network: opts.network }, opts.json as boolean);
   });
 
 // ─── Parse ────────────────────────────────────────────────────────────────────
 
-program.parse(process.argv);
+program.parseAsync(process.argv);
