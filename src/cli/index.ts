@@ -8,6 +8,7 @@
 import { Command } from "commander";
 import { getNetwork } from "../core/contracts.js";
 import { executeReadTool } from "../core/tools/index.js";
+import { assertAddress, parseCliNetwork } from "../core/validation.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ async function runReadTool(
   json: boolean
 ): Promise<void> {
   const opts = program.opts();
-  const network = getNetwork(opts.network as string);
+  const network = getNetwork(parseCliNetwork(opts.network as string));
   const result = await executeReadTool(name, params, network);
   output(result ?? { ok: false, error: `Unknown tool: ${name}` }, json);
   if (result && !result.ok) {
@@ -149,7 +150,11 @@ program
   .description("Get a wallet's lending position")
   .action(async (address: string) => {
     const opts = program.opts();
-    await runReadTool("getPosition", { address, network: opts.network }, opts.json as boolean);
+    await runReadTool(
+      "getPosition",
+      { address: assertAddress(address), network: opts.network },
+      opts.json as boolean
+    );
   });
 
 program
@@ -240,7 +245,11 @@ program
   .description("Get a complete portfolio summary: balances, LP positions, lending position")
   .action(async (address: string) => {
     const opts = program.opts();
-    await runReadTool("getPortfolio", { address, network: opts.network }, opts.json as boolean);
+    await runReadTool(
+      "getPortfolio",
+      { address: assertAddress(address), network: opts.network },
+      opts.json as boolean
+    );
   });
 
 // ─── Info commands ────────────────────────────────────────────────────────────

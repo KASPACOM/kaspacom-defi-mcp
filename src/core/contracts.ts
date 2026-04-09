@@ -235,6 +235,8 @@ export const KASPLEX_MAINNET: NetworkConfig = {
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
+export const CANONICAL_NETWORK_NAMES = ["galleon", "igra", "kasplex"] as const;
+
 export const NETWORKS: Record<string, NetworkConfig> = {
   galleon: GALLEON_TESTNET,
   testnet: GALLEON_TESTNET, // alias

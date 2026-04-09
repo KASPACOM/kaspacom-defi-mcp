@@ -17,6 +17,7 @@ import {
 import * as http from "http";
 import { getNetwork } from "../core/contracts.js";
 import { executeReadTool } from "../core/tools/index.js";
+import { assertAddress, isAddressField } from "../core/validation.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -298,32 +299,61 @@ const TOOLS = [
 
 // ─── Server ───────────────────────────────────────────────────────────────────
 
-const server = new Server(
-  { name: SERVER_NAME, version: SERVER_VERSION },
-  {
-    capabilities: {
-      tools: {},
-    },
+const WRITE_OPS = new Set([
+  "swap",
+  "addLiquidity",
+  "removeLiquidity",
+  "supply",
+  "borrow",
+  "repay",
+  "buyLaunchToken",
+  "sellLaunchToken",
+]);
+
+interface HandlerDeps {
+  walletKey?: string;
+  defaultNetworkName: string;
+  readToolExecutor: typeof executeReadTool;
+}
+
+function sanitizeArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const sanitized = { ...args };
+  for (const [field, value] of Object.entries(sanitized)) {
+    if (typeof value === "string" && isAddressField(field)) {
+      sanitized[field] = assertAddress(value, field);
+    }
   }
-);
+  return sanitized;
+}
 
-// List tools handler
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: TOOLS as unknown as typeof TOOLS[number][] };
-});
+export async function handleCallTool(
+  request: { params: { name: string; arguments?: Record<string, unknown> } },
+  deps: HandlerDeps,
+) {
+  const { name } = request.params;
 
-// Call tool handler — Phase 1 stubs
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  let args: Record<string, unknown>;
+  let net;
+  try {
+    args = sanitizeArgs((request.params.arguments as Record<string, unknown>) ?? {});
+    const netName = (args.network as string | undefined) ?? deps.defaultNetworkName;
+    net = getNetwork(netName);
+  } catch (error: unknown) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: String(error),
+            tool: name,
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
 
-  // Resolve network from args or env
-  const netName = (args as Record<string, unknown>)?.network as string | undefined
-    ?? networkName;
-  const net = getNetwork(netName);
-
-  // Write operations require a wallet key
-  const writeOps = new Set(["swap", "addLiquidity", "removeLiquidity", "supply", "borrow", "repay", "buyLaunchToken", "sellLaunchToken"]);
-  if (writeOps.has(name) && !walletKey) {
+  if (WRITE_OPS.has(name) && !deps.walletKey) {
     return {
       content: [
         {
@@ -338,7 +368,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   }
 
-  const readResult = await executeReadTool(name, (args as Record<string, unknown>) ?? {}, net);
+  const readResult = await deps.readToolExecutor(name, args, net);
   if (readResult) {
     return {
       content: [
@@ -355,18 +385,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     content: [
       {
         type: "text",
-        text: JSON.stringify({
-          tool: name,
-          network: net.name,
-          chainId: net.chainId,
-          status: "not_implemented",
-          message: `Write tool "${name}" is registered but not yet implemented.`,
-          args,
-        }, null, 2),
+        text: JSON.stringify(
+          {
+            tool: name,
+            network: net.name,
+            chainId: net.chainId,
+            status: "not_implemented",
+            message: `Write tool "${name}" is registered but not yet implemented.`,
+            args,
+          },
+          null,
+          2,
+        ),
       },
     ],
   };
-});
+}
+
+export function createMcpServer(deps: HandlerDeps): Server {
+  const server = new Server(
+    { name: SERVER_NAME, version: SERVER_VERSION },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return { tools: TOOLS as unknown as typeof TOOLS[number][] };
+  });
+
+  server.setRequestHandler(CallToolRequestSchema, async (request) => handleCallTool(request, deps));
+
+  return server;
+}
 
 // ─── Health endpoint (HTTP) ───────────────────────────────────────────────────
 
@@ -408,6 +461,12 @@ async function main(): Promise<void> {
     );
   }
 
+  const server = createMcpServer({
+    walletKey,
+    defaultNetworkName: networkName,
+    readToolExecutor: executeReadTool,
+  });
+
   // Start health endpoint
   startHealthServer();
 
@@ -418,7 +477,13 @@ async function main(): Promise<void> {
   process.stderr.write("[kaspacom-defi-mcp] MCP server ready\n");
 }
 
-main().catch((err: unknown) => {
-  process.stderr.write(`[kaspacom-defi-mcp] Fatal error: ${String(err)}\n`);
-  process.exit(1);
-});
+const isEntrypoint =
+  typeof process.argv[1] === "string"
+  && /(?:^|[/\\])mcp[/\\]index\.(?:ts|js)$/.test(process.argv[1]);
+
+if (isEntrypoint) {
+  main().catch((err: unknown) => {
+    process.stderr.write(`[kaspacom-defi-mcp] Fatal error: ${String(err)}\n`);
+    process.exit(1);
+  });
+}
