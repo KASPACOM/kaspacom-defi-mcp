@@ -1,12 +1,12 @@
 # AGENTS.md — KaspaCom DeFi MCP Integration Guide
 
-This guide helps AI agents (Claude, GPT, Codex, etc.) integrate with the KaspaCom DeFi MCP server to interact with DEX, Lending, and Launchpad protocols on the IGRA blockchain (Kaspa L2).
+This guide helps AI agents (Claude, GPT, Codex, etc.) integrate with the KaspaCom DeFi MCP server to interact with KaspaCom DeFi across IGRA and Kasplex mainnet/testnet environments.
 
 ---
 
 ## Protocol Overview
 
-KaspaCom DeFi runs on **IGRA** — a Kaspa Layer 2 EVM chain. Three protocols are accessible:
+KaspaCom DeFi runs across **IGRA** and **Kasplex** Kaspa Layer 2 EVM environments. Three protocols are accessible:
 
 | Protocol | Type | Description |
 |----------|------|-------------|
@@ -15,8 +15,15 @@ KaspaCom DeFi runs on **IGRA** — a Kaspa Layer 2 EVM chain. Three protocols ar
 | **LFG Launchpad** | Token launch platform | Buy/sell tokens during launch phase |
 
 **Networks:**
-- `galleon` — Galleon Testnet (chainId 38836) — use this for testing
-- `igra` — IGRA Mainnet (chainId 38833) — production
+- `igra` — IGRA Mainnet (chainId 38833)
+- `igra-testnet` — IGRA Testnet / Galleon (chainId 38836)
+- `kasplex` — Kasplex Mainnet (chainId 202555)
+- `kasplex-testnet` — Kasplex Testnet (chainId 167012)
+
+Aliases kept for compatibility:
+- `galleon` → `igra-testnet`
+- `testnet` → `igra-testnet`
+- `mainnet` → `igra`
 
 ---
 
@@ -31,7 +38,7 @@ MCP_WALLET_KEY="" node dist/mcp/index.js
 
 ### With a wallet (required for swaps, lending, launchpad buys)
 ```bash
-MCP_WALLET_KEY="0xYOUR_PRIVATE_KEY" MCP_NETWORK="galleon" node dist/mcp/index.js
+MCP_WALLET_KEY="0xYOUR_PRIVATE_KEY" MCP_NETWORK="igra-testnet" node dist/mcp/index.js
 ```
 
 ---
@@ -46,7 +53,7 @@ List all DEX liquidity pairs with reserves and token info.
 **Input:**
 ```json
 {
-  "network": "galleon",
+  "network": "igra-testnet",
   "limit": 20
 }
 ```
@@ -66,14 +73,14 @@ List all DEX liquidity pairs with reserves and token info.
 ---
 
 #### `getTokenPrice`
-Get token price in USD or relative to another token.
+Get token price in USD from the network DEX/subgraph pricing path.
 
 **Input:**
 ```json
 {
   "token": "WKAS",
   "quoteToken": "USDC",
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -99,7 +106,7 @@ Swap tokens via DEX router. **Requires wallet.**
   "tokenOut": "WKAS",
   "amountIn": "100",
   "slippagePct": 0.5,
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -186,7 +193,7 @@ Get a wallet's current lending position and health factor.
 ```json
 {
   "address": "0xYOUR_WALLET",
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -211,7 +218,7 @@ Supply tokens to earn interest and use as collateral. **Requires wallet.**
 {
   "token": "USDC",
   "amount": "500",
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -235,7 +242,7 @@ Borrow tokens against supplied collateral (variable rate). **Requires wallet.**
 {
   "token": "WKAS",
   "amount": "200",
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -326,7 +333,7 @@ Full portfolio summary across DEX, lending, and balances.
 ```json
 {
   "address": "0xYOUR_WALLET",
-  "network": "galleon"
+  "network": "igra-testnet"
 }
 ```
 
@@ -356,7 +363,7 @@ Protocol overview: contracts, tokens, network info.
 **Output:**
 ```json
 {
-  "network": "galleon",
+  "network": "igra-testnet",
   "chainId": 38836,
   "rpc": "https://galleon-testnet.igralabs.com:8545",
   "contracts": {
@@ -432,7 +439,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "command": "node",
       "args": ["/path/to/kaspacom-defi-mcp/dist/mcp/index.js"],
       "env": {
-        "MCP_NETWORK": "galleon",
+        "MCP_NETWORK": "igra-testnet",
         "MCP_WALLET_KEY": "0xYOUR_TESTNET_PRIVATE_KEY"
       }
     }
@@ -452,7 +459,7 @@ Add to `/root/.openclaw/openclaw.json` under `plugins.mcp.servers`:
     "command": "node",
     "args": ["/home/coder/projects/kaspacom-defi-mcp/dist/mcp/index.js"],
     "env": {
-      "MCP_NETWORK": "galleon",
+      "MCP_NETWORK": "igra-testnet",
       "MCP_WALLET_KEY": "${MCP_WALLET_KEY}"
     }
   }
@@ -471,11 +478,12 @@ npm run build
 npm link
 
 # Examples
-kaspacom-defi getProtocolInfo --network galleon
-kaspacom-defi getPairs --network galleon --json
-kaspacom-defi getTokenPrice WKAS --quote USDC
-kaspacom-defi getMarkets
-kaspacom-defi getPortfolio 0xYOUR_ADDRESS
+kaspacom-defi getProtocolInfo --network igra-testnet
+kaspacom-defi getPairs --network igra-testnet --json
+kaspacom-defi getPairs --network kasplex-testnet --json
+kaspacom-defi getTokenPrice WKAS --quote USDC --network igra-testnet
+kaspacom-defi getMarkets --network kasplex-testnet
+kaspacom-defi getPortfolio 0xYOUR_ADDRESS --network igra-testnet
 
 # Write operations require --wallet
 kaspacom-defi swap --in USDC --out WKAS --amount 100 --wallet 0xKEY
@@ -489,7 +497,7 @@ kaspacom-defi borrow --token WKAS --amount 200 --wallet 0xKEY
 
 ⚠️ **CRITICAL — READ BEFORE USING**
 
-1. **Testnet only for now.** Use Galleon Testnet (`--network galleon`) during development. Mainnet keys should NEVER be used until the protocol is production-audited.
+1. **Use testnets first for development.** Prefer `--network igra-testnet` or `--network kasplex-testnet` for testing. Mainnet support exists, but testnet wallets should be used by default for agent/dev workflows.
 
 2. **Never put mainnet private keys in config files.** Use environment variables only:
    ```bash
@@ -500,7 +508,7 @@ kaspacom-defi borrow --token WKAS --amount 200 --wallet 0xKEY
 
 4. **Rotate keys if exposed.** If a private key appears in logs, commit history, or error messages — rotate it immediately.
 
-5. **Testnet wallets only.** Keep a separate wallet with only testnet funds. Never reuse a wallet that holds real assets.
+5. **Prefer dedicated testnet wallets.** Keep separate wallets for `igra-testnet` and `kasplex-testnet` when possible, and never reuse a wallet that holds meaningful mainnet assets.
 
 6. **Health factor safety.** When borrowing, maintain health factor > 1.5. Below 1.0 means liquidation.
 
@@ -514,7 +522,7 @@ The MCP server exposes a health endpoint at `http://127.0.0.1:3100/`:
 
 ```bash
 curl http://127.0.0.1:3100/
-# {"status":"ok","server":"kaspacom-defi-mcp","version":"0.1.0","network":"galleon",...}
+# {"status":"ok","server":"kaspacom-defi-mcp","version":"0.1.0","network":"igra",...}
 ```
 
 ---
@@ -524,5 +532,6 @@ curl http://127.0.0.1:3100/
 | Phase | Status | Contents |
 |-------|--------|----------|
 | Phase 1 — Foundation | ✅ Complete | Network config, RPC client, ABI wrappers, MCP shell, CLI shell |
-| Phase 2 — Implementations | 🔜 Pending | Full DEX, Lending, Launchpad tool logic |
-| Phase 3 — Mainnet | 🔜 Pending | Mainnet contract addresses, production hardening |
+| Phase 2 — Read tools | ✅ Complete | DEX, lending, launchpad, portfolio, protocol info read flows |
+| Phase 3 — Write tools | 🔜 Pending | Swap / liquidity / lending write execution |
+| Phase 4 — Hardening | 🔜 Pending | Docs cleanup, production safety, broader integration polish |
