@@ -8,7 +8,7 @@ export async function getActiveLaunches(
   _rpcClient: RpcClient
 ): Promise<ToolResult> {
   try {
-    const url = `https://api-defi.kaspa.com/lfg/tokens?status=active&network=${encodeURIComponent(network.name)}`;
+    const url = `https://api-defi.kaspa.com/lfg/tokens?status=active&network=${encodeURIComponent(network.launchpadApiNetwork)}`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

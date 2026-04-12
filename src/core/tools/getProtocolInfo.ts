@@ -15,10 +15,13 @@ export async function getProtocolInfo(
 
     const networks = listNetworks().map((item) => ({
       name: item.name,
+      aliases: item.aliases,
       chainId: item.chainId,
       rpc: item.rpc,
       explorer: item.explorer,
       subgraphUrl: item.subgraphUrl,
+      dexSubgraphName: item.dexSubgraphName,
+      launchpadApiNetwork: item.launchpadApiNetwork,
       features: item.features,
       contracts: item.contracts,
       verifiedTokens: Object.values(item.tokens),

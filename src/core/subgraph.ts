@@ -32,5 +32,5 @@ export async function querySubgraph<T>(
 }
 
 export function getDexSubgraphEndpoint(network: NetworkConfig): string {
-  return `${network.subgraphUrl}/subgraphs/name/${network.name}-kas-v2-core`;
+  return `${network.subgraphUrl}/subgraphs/name/${network.dexSubgraphName}`;
 }

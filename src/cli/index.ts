@@ -52,9 +52,13 @@ const program = new Command();
 
 program
   .name("kaspacom-defi")
-  .description("KaspaCom DeFi CLI — interact with DEX, Lending, and Launchpad on IGRA/Kasplex")
+  .description("KaspaCom DeFi CLI — interact with DEX, Lending, and Launchpad on IGRA/Kasplex mainnet + testnet")
   .version("0.1.0")
-  .option("-n, --network <name>", "Network: galleon, igra, kasplex", "galleon")
+  .option(
+    "-n, --network <name>",
+    "Network: igra, igra-testnet, kasplex, kasplex-testnet (aliases: galleon, testnet, mainnet)",
+    "igra"
+  )
   .option("-w, --wallet <key>", "Private key or env var name for write operations")
   .option("-j, --json", "Output raw JSON", false);
 

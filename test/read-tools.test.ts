@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { GALLEON_TESTNET, KASPLEX_MAINNET, IGRA_MAINNET } from "../src/core/contracts.js";
+import { IGRA_TESTNET, KASPLEX_MAINNET, KASPLEX_TESTNET, IGRA_MAINNET } from "../src/core/contracts.js";
 import { getProtocolInfo } from "../src/core/tools/getProtocolInfo.js";
 import { getMarkets } from "../src/core/tools/getMarkets.js";
 import { getPairs } from "../src/core/tools/getPairs.js";
@@ -8,7 +8,7 @@ import { AAVE_POOL_IFACE, ERC20_IFACE } from "../src/core/typed-contracts.js";
 function createRpcStub(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     getBlockNumber: vi.fn().mockResolvedValue(12345n),
-    getChainId: vi.fn().mockResolvedValue(BigInt(GALLEON_TESTNET.chainId)),
+    getChainId: vi.fn().mockResolvedValue(BigInt(IGRA_TESTNET.chainId)),
     getBalance: vi.fn(),
     ethCall: vi.fn(),
     ...overrides,
@@ -22,7 +22,7 @@ describe("read tools", () => {
 
   it("getProtocolInfo returns valid structure with all networks", async () => {
     const rpc = createRpcStub();
-    const result = await getProtocolInfo({}, GALLEON_TESTNET, rpc as never);
+    const result = await getProtocolInfo({}, IGRA_TESTNET, rpc as never);
 
     expect(result.ok).toBe(true);
     const data = result.data as {
@@ -32,9 +32,10 @@ describe("read tools", () => {
     };
 
     expect(data.networks.map((network) => network.name)).toEqual(
-      expect.arrayContaining(["galleon", "igra", "kasplex"])
+      expect.arrayContaining(["igra", "igra-testnet", "kasplex", "kasplex-testnet"])
     );
     expect(data.networks.find((network) => network.name === "kasplex")?.chainId).toBe(202555);
+    expect(data.networks.find((network) => network.name === "kasplex-testnet")?.chainId).toBe(167012);
     expect(data.gasTips.minGasPriceWei).toBe("2000000001");
     expect(data.agentsGuide).toContain("KaspaCom DeFi MCP Integration Guide");
   });

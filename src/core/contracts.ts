@@ -1,6 +1,6 @@
 /**
  * contracts.ts — Network config and deployed contract addresses
- * for KaspaCom DeFi on IGRA (Kaspa L2 EVM chain).
+ * for KaspaCom DeFi on IGRA / Kasplex EVM networks.
  *
  * Rule: No side effects on import. Pure data + helpers only.
  */
@@ -38,18 +38,21 @@ export interface NetworkContracts {
 
 export interface NetworkConfig {
   name: string;
+  aliases: string[];
   chainId: number;
   rpc: string;
   explorer: string;
   subgraphUrl: string;
+  dexSubgraphName: string;
+  launchpadApiNetwork: string;
   features: NetworkFeatures;
   contracts: NetworkContracts;
   tokens: Record<string, TokenInfo>;
 }
 
-// ─── Galleon Testnet (chainId 38836) ─────────────────────────────────────────
+// ─── IGRA Testnet / Galleon (chainId 38836) ──────────────────────────────────
 
-const GALLEON_TOKENS: Record<string, TokenInfo> = {
+const IGRA_TESTNET_TOKENS: Record<string, TokenInfo> = {
   WKAS: {
     symbol: "WKAS",
     address: "0x394C68684F9AFCEb9b804531EF07a864E8081738",
@@ -82,12 +85,15 @@ const GALLEON_TOKENS: Record<string, TokenInfo> = {
   },
 };
 
-export const GALLEON_TESTNET: NetworkConfig = {
-  name: "galleon",
+export const IGRA_TESTNET: NetworkConfig = {
+  name: "igra-testnet",
+  aliases: ["galleon", "testnet"],
   chainId: 38836,
   rpc: "https://galleon-testnet.igralabs.com:8545",
   explorer: "https://explorer.galleon-testnet.igralabs.com",
-  subgraphUrl: "https://graph-galleon.kaspa.com",
+  subgraphUrl: "https://dev-graph-igra.kaspa.com",
+  dexSubgraphName: "igra-testnet-v2-core",
+  launchpadApiNetwork: "igra",
   features: {
     dex: true,
     lending: true,
@@ -109,8 +115,10 @@ export const GALLEON_TESTNET: NetworkConfig = {
       wrappedTokenGateway: "0x89F4834CEe75f53dFb9F717362DC1a574966632e",
     },
   },
-  tokens: GALLEON_TOKENS,
+  tokens: IGRA_TESTNET_TOKENS,
 };
+
+export const GALLEON_TESTNET = IGRA_TESTNET;
 
 // ─── IGRA Mainnet (chainId 38833) ────────────────────────────────────────────
 
@@ -124,10 +132,13 @@ const IGRA_MAINNET_TOKENS: Record<string, TokenInfo> = {
 
 export const IGRA_MAINNET: NetworkConfig = {
   name: "igra",
+  aliases: ["igra-mainnet", "mainnet"],
   chainId: 38833,
   rpc: "https://rpc.igralabs.com:8545",
   explorer: "https://explorer.igralabs.com",
   subgraphUrl: "https://graph-igra.kaspa.com",
+  dexSubgraphName: "igra-kas-v2-core",
+  launchpadApiNetwork: "igra",
   features: {
     dex: true,
     lending: false,
@@ -141,7 +152,6 @@ export const IGRA_MAINNET: NetworkConfig = {
       routerPermitFee: "0xDD1aBB133D027f4F67571b5bEEDC9cd9a93C13Ca",
     },
     lending: {
-      // Aave not yet deployed on Igra Mainnet
       pool: "",
       oracle: "",
       poolAddressesProvider: "",
@@ -151,6 +161,74 @@ export const IGRA_MAINNET: NetworkConfig = {
     },
   },
   tokens: IGRA_MAINNET_TOKENS,
+};
+
+// ─── Kasplex Testnet (chainId 167012) ────────────────────────────────────────
+
+const KASPLEX_TESTNET_TOKENS: Record<string, TokenInfo> = {
+  WKAS: {
+    symbol: "WKAS",
+    address: "0xf40178040278E16c8813dB20a84119A605812FB3",
+    decimals: 18,
+  },
+  WBTC: {
+    symbol: "WBTC",
+    address: "0x508B83AB67fEDcd1e8b6F8AE88F5Eb0B1670eFb6",
+    decimals: 8,
+  },
+  WETH: {
+    symbol: "WETH",
+    address: "0x54319ceE10d537Dec6aa812d6f22eC3F31AC7ca6",
+    decimals: 18,
+  },
+  DAI: {
+    symbol: "DAI",
+    address: "0x9E7edE66d39d9b69d817b7368CD9d66a7D6Dc468",
+    decimals: 18,
+  },
+  USDC: {
+    symbol: "USDC",
+    address: "0xFC84a4b04E0074D08c4242A291bfC73840E5Ad14",
+    decimals: 6,
+  },
+  USDT: {
+    symbol: "USDT",
+    address: "0xDaf8B68Cdf320727af105bCa68e174b5EDB3433E",
+    decimals: 6,
+  },
+};
+
+export const KASPLEX_TESTNET: NetworkConfig = {
+  name: "kasplex-testnet",
+  aliases: ["kasplex-test"],
+  chainId: 167012,
+  rpc: "https://rpc.kasplextest.xyz",
+  explorer: "https://explorer.testnet.kasplextest.xyz",
+  subgraphUrl: "https://dev-graph-kasplex.kaspa.com",
+  dexSubgraphName: "kasplex-testnet-kas-new-v2-core",
+  launchpadApiNetwork: "kasplex",
+  features: {
+    dex: true,
+    lending: true,
+    launchpad: true,
+  },
+  contracts: {
+    wkas: "0xf40178040278E16c8813dB20a84119A605812FB3",
+    dex: {
+      factory: "0x89d5842017ceA7dd18D10EE6c679cE199d2aD99E",
+      router: "0x81Cc4e7DbC652ec9168Bc2F4435C02d7F315148e",
+      routerPermitFee: "0x5B7e7830851816f8ad968B0e0c336bd50b4860Ad",
+    },
+    lending: {
+      oracle: "0x0730633De813d5EEbAaD00538c468c01897A23b0",
+      pool: "0x6715ff97db95D74f92d5a45b8BB3239389F9ddF4",
+      poolAddressesProvider: "0x83F5E070924586cDd7c55f7BC3EDe6885BFcE4dB",
+      uiPoolDataProvider: "0x40C537bcd43173CcBB374241a88c0F14F0DEFA1e",
+      poolDataProvider: "0x93952B31970a4abf5455BFD80FC90B9c874EF801",
+      wrappedTokenGateway: "0xeb72383b0C0EA901932c52Ab4296E6cCDdD584BC",
+    },
+  },
+  tokens: KASPLEX_TESTNET_TOKENS,
 };
 
 // ─── Kasplex Mainnet (chainId 202555) ────────────────────────────────────────
@@ -205,10 +283,13 @@ const KASPLEX_MAINNET_TOKENS: Record<string, TokenInfo> = {
 
 export const KASPLEX_MAINNET: NetworkConfig = {
   name: "kasplex",
+  aliases: ["kasplex-mainnet"],
   chainId: 202555,
   rpc: "https://evmrpc.kasplex.org",
   explorer: "https://explorer.kasplex.org/",
   subgraphUrl: "https://graph-kasplex.kaspa.com",
+  dexSubgraphName: "kasplex-kas-v2-core",
+  launchpadApiNetwork: "kasplex",
   features: {
     dex: true,
     lending: true,
@@ -235,25 +316,36 @@ export const KASPLEX_MAINNET: NetworkConfig = {
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export const CANONICAL_NETWORK_NAMES = ["galleon", "igra", "kasplex"] as const;
+export const CANONICAL_NETWORK_NAMES = [
+  "igra",
+  "igra-testnet",
+  "kasplex",
+  "kasplex-testnet",
+] as const;
 
 export const NETWORKS: Record<string, NetworkConfig> = {
-  galleon: GALLEON_TESTNET,
-  testnet: GALLEON_TESTNET, // alias
   igra: IGRA_MAINNET,
-  mainnet: IGRA_MAINNET, // alias
+  "igra-mainnet": IGRA_MAINNET,
+  mainnet: IGRA_MAINNET,
+  "igra-testnet": IGRA_TESTNET,
+  galleon: IGRA_TESTNET,
+  testnet: IGRA_TESTNET,
   kasplex: KASPLEX_MAINNET,
+  "kasplex-mainnet": KASPLEX_MAINNET,
+  "kasplex-testnet": KASPLEX_TESTNET,
+  "kasplex-test": KASPLEX_TESTNET,
 };
 
 export const CANONICAL_NETWORKS: NetworkConfig[] = [
-  GALLEON_TESTNET,
   IGRA_MAINNET,
+  IGRA_TESTNET,
   KASPLEX_MAINNET,
+  KASPLEX_TESTNET,
 ];
 
 /**
  * Get a network config by name. Throws if unknown.
- * Accepts: "galleon", "testnet", "igra", "mainnet", "kasplex"
+ * Accepts canonical names plus aliases like "galleon", "testnet", and "mainnet".
  */
 export function getNetwork(name: string): NetworkConfig {
   const key = name.toLowerCase();

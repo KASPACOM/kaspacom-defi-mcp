@@ -14,7 +14,7 @@ describe("MCP CallTool handler", () => {
       },
       {
         walletKey: undefined,
-        defaultNetworkName: "galleon",
+        defaultNetworkName: "igra-testnet",
         readToolExecutor: executeReadTool as never,
       },
     );
@@ -38,20 +38,20 @@ describe("MCP CallTool handler", () => {
       {
         params: {
           name: "getPairs",
-          arguments: { limit: 5, network: "galleon" },
+          arguments: { limit: 5, network: "igra-testnet" },
         },
       },
       {
         walletKey: undefined,
-        defaultNetworkName: "galleon",
+        defaultNetworkName: "igra-testnet",
         readToolExecutor: executeReadTool as never,
       },
     );
 
     expect(executeReadTool).toHaveBeenCalledWith(
       "getPairs",
-      { limit: 5, network: "galleon" },
-      expect.objectContaining({ name: "galleon", chainId: 38836 }),
+      { limit: 5, network: "igra-testnet" },
+      expect.objectContaining({ name: "igra-testnet", chainId: 38836 }),
     );
     expect(result.isError).toBe(false);
     expect(JSON.parse(result.content[0].text)).toMatchObject({
@@ -73,7 +73,7 @@ describe("MCP CallTool handler", () => {
       },
       {
         walletKey: undefined,
-        defaultNetworkName: "galleon",
+        defaultNetworkName: "igra-testnet",
         readToolExecutor: executeReadTool as never,
       },
     );
@@ -94,12 +94,12 @@ describe("MCP CallTool handler", () => {
       {
         params: {
           name: "getPosition",
-          arguments: { address: "bad-address", network: "galleon" },
+          arguments: { address: "bad-address", network: "igra-testnet" },
         },
       },
       {
         walletKey: undefined,
-        defaultNetworkName: "galleon",
+        defaultNetworkName: "igra-testnet",
         readToolExecutor: executeReadTool as never,
       },
     );

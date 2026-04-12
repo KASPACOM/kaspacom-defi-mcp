@@ -26,7 +26,7 @@ const SERVER_VERSION = "0.1.0";
 const HEALTH_PORT = parseInt(process.env.MCP_HEALTH_PORT ?? "3100", 10);
 
 const walletKey = process.env.MCP_WALLET_KEY;
-const networkName = process.env.MCP_NETWORK ?? "galleon";
+const networkName = process.env.MCP_NETWORK ?? "igra";
 
 // Validate network on startup
 const network = getNetwork(networkName);
@@ -44,7 +44,7 @@ const TOOLS = [
       properties: {
         network: {
           type: "string",
-          description: "Network name: 'galleon', 'igra', or 'kasplex'. Default: galleon.",
+          description: "Network name: 'igra', 'igra-testnet', 'kasplex', or 'kasplex-testnet'. Aliases: galleon, testnet, mainnet. Default: igra.",
         },
         limit: {
           type: "number",

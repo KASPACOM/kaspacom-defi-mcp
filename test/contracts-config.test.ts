@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   GALLEON_TESTNET,
   IGRA_MAINNET,
+  IGRA_TESTNET,
   KASPLEX_MAINNET,
+  KASPLEX_TESTNET,
   getNetwork,
   getTokenByAddress,
   listNetworks,
@@ -14,22 +16,32 @@ const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 describe("network and contract config sanity", () => {
   it("resolves canonical networks and aliases", () => {
-    expect(getNetwork("galleon")).toBe(GALLEON_TESTNET);
-    expect(getNetwork("testnet")).toBe(GALLEON_TESTNET);
     expect(getNetwork("igra")).toBe(IGRA_MAINNET);
+    expect(getNetwork("igra-mainnet")).toBe(IGRA_MAINNET);
     expect(getNetwork("mainnet")).toBe(IGRA_MAINNET);
+    expect(getNetwork("igra-testnet")).toBe(IGRA_TESTNET);
+    expect(getNetwork("galleon")).toBe(GALLEON_TESTNET);
+    expect(getNetwork("testnet")).toBe(IGRA_TESTNET);
     expect(getNetwork("kasplex")).toBe(KASPLEX_MAINNET);
+    expect(getNetwork("kasplex-mainnet")).toBe(KASPLEX_MAINNET);
+    expect(getNetwork("kasplex-testnet")).toBe(KASPLEX_TESTNET);
+    expect(getNetwork("kasplex-test")).toBe(KASPLEX_TESTNET);
   });
 
   it("rejects unknown networks with helpful valid options", () => {
     expect(() => getNetwork("unknown-net")).toThrowError(
-      'Unknown network: "unknown-net". Valid options: galleon, testnet, igra, mainnet, kasplex'
+      'Unknown network: "unknown-net". Valid options: igra, igra-mainnet, mainnet, igra-testnet, galleon, testnet, kasplex, kasplex-mainnet, kasplex-testnet, kasplex-test'
     );
   });
 
   it("exposes unique canonical networks only", () => {
     const networks = listNetworks();
-    expect(networks.map((network) => network.name)).toEqual(["galleon", "igra", "kasplex"]);
+    expect(networks.map((network) => network.name)).toEqual([
+      "igra",
+      "igra-testnet",
+      "kasplex",
+      "kasplex-testnet",
+    ]);
     expect(new Set(networks.map((network) => network.chainId)).size).toBe(networks.length);
   });
 
@@ -39,6 +51,8 @@ describe("network and contract config sanity", () => {
       expect(network.contracts.wkas).toMatch(ADDRESS_RE);
       expect(network.rpc).toMatch(/^https:\/\//);
       expect(network.subgraphUrl).toMatch(/^https:\/\//);
+      expect(network.dexSubgraphName.length).toBeGreaterThan(0);
+      expect(network.launchpadApiNetwork.length).toBeGreaterThan(0);
 
       if (network.features.dex) {
         expect(network.contracts.dex.factory).toMatch(ADDRESS_RE);
@@ -67,7 +81,7 @@ describe("network and contract config sanity", () => {
 
   it("looks up tokens case-insensitively by address and reports missing symbols", () => {
     expect(
-      getTokenByAddress(GALLEON_TESTNET, "0xFEE6EE271C2FD76EDAD5DE7B8177C3935799111A")?.symbol
+      getTokenByAddress(IGRA_TESTNET, "0xFEE6EE271C2FD76EDAD5DE7B8177C3935799111A")?.symbol
     ).toBe("USDC");
 
     expect(() => requireToken(IGRA_MAINNET, "USDC")).toThrowError(
@@ -76,12 +90,14 @@ describe("network and contract config sanity", () => {
   });
 
   it("normalizes valid CLI networks and rejects invalid ones with canonical guidance", () => {
-    expect(parseCliNetwork("GALLEON")).toBe("galleon");
+    expect(parseCliNetwork("GALLEON")).toBe("igra-testnet");
+    expect(parseCliNetwork("igra-testnet")).toBe("igra-testnet");
     expect(parseCliNetwork("mainnet")).toBe("igra");
     expect(parseCliNetwork("kasplex")).toBe("kasplex");
+    expect(parseCliNetwork("kasplex-testnet")).toBe("kasplex-testnet");
 
     expect(() => parseCliNetwork("weirdnet")).toThrowError(
-      'Invalid network "weirdnet". Use one of: galleon, igra, kasplex'
+      'Invalid network "weirdnet". Use one of: igra, igra-testnet, kasplex, kasplex-testnet'
     );
   });
 
