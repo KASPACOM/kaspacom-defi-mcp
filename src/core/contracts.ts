@@ -82,11 +82,6 @@ const IGRA_TESTNET_TOKENS: Record<string, TokenInfo> = {
     address: "0xfEE6ee271c2fD76EdAd5De7B8177C3935799111A",
     decimals: 6,
   },
-  USDT: {
-    symbol: "USDT",
-    address: "0xDaf8B68Cdf320727af105bCa68e174b5EDB3433E",
-    decimals: 6,
-  },
 };
 
 export const IGRA_TESTNET: NetworkConfig = {
@@ -219,7 +214,7 @@ export const KASPLEX_TESTNET: NetworkConfig = {
   subgraphSchemaVariant: "kas",
   features: {
     dex: true,
-    lending: true,
+    lending: false,
     launchpad: true,
   },
   contracts: {
@@ -230,12 +225,12 @@ export const KASPLEX_TESTNET: NetworkConfig = {
       routerPermitFee: "0x5B7e7830851816f8ad968B0e0c336bd50b4860Ad",
     },
     lending: {
-      oracle: "0x0730633De813d5EEbAaD00538c468c01897A23b0",
-      pool: "0x6715ff97db95D74f92d5a45b8BB3239389F9ddF4",
-      poolAddressesProvider: "0x83F5E070924586cDd7c55f7BC3EDe6885BFcE4dB",
-      uiPoolDataProvider: "0x40C537bcd43173CcBB374241a88c0F14F0DEFA1e",
-      poolDataProvider: "0x93952B31970a4abf5455BFD80FC90B9c874EF801",
-      wrappedTokenGateway: "0xeb72383b0C0EA901932c52Ab4296E6cCDdD584BC",
+      pool: "",
+      oracle: "",
+      poolAddressesProvider: "",
+      uiPoolDataProvider: "",
+      poolDataProvider: "",
+      wrappedTokenGateway: "",
     },
   },
   tokens: KASPLEX_TESTNET_TOKENS,
@@ -259,34 +254,14 @@ const KASPLEX_MAINNET_TOKENS: Record<string, TokenInfo> = {
     address: "0x9a5a144290dffa24c6c7aa8ca9a62319e60973d8",
     decimals: 18,
   },
-  KASPY: {
-    symbol: "KASPY",
-    address: "0x58AC2306566074Cc8C1c7704B53D7D2B6A656ca8",
-    decimals: 18,
-  },
   WOLFY: {
     symbol: "WOLFY",
     address: "0xaf109de38a3e9c78260d8f02016dd1cb2fa2d168",
     decimals: 18,
   },
-  CRUMBS: {
-    symbol: "CRUMBS",
-    address: "0x7420872D0F2A6b6a3C87dE0D2a4b1C08C7A49f8d",
-    decimals: 18,
-  },
   KASMO: {
     symbol: "KASMO",
     address: "0x31e8aea3259e357042c8fd791250c108e2d27728",
-    decimals: 18,
-  },
-  KPAW: {
-    symbol: "KPAW",
-    address: "0x2751193fA6e3A6C8c0D9c5eB1765c81e5b4aBc31",
-    decimals: 18,
-  },
-  FUND: {
-    symbol: "FUND",
-    address: "0xE98f85b036A1f7d6A59cF6A7f99f89A76b85F9f1",
     decimals: 18,
   },
 };
@@ -304,7 +279,7 @@ export const KASPLEX_MAINNET: NetworkConfig = {
   subgraphSchemaVariant: "kas",
   features: {
     dex: true,
-    lending: true,
+    lending: false,
     launchpad: true,
   },
   contracts: {
@@ -315,12 +290,12 @@ export const KASPLEX_MAINNET: NetworkConfig = {
       routerPermitFee: "0x4c5BEaAE83577E3a117ce2F477fC42a1EA39A8a3",
     },
     lending: {
-      oracle: "0x6f10A47E2Df6138a36Bc785DA927Ea4072fd4c8f",
-      pool: "0x631BC5c362ce203B6043844f93f2c67D23a87994",
-      poolAddressesProvider: "0xEf0a017368a8C179895Ffff65C731510eB28d964",
-      uiPoolDataProvider: "0xd1b82017FAA537C1064B111E597D5003a66A23Fb",
-      poolDataProvider: "0x22B9bDEA931cE0b137DAEf80B2228a288ba05835",
-      wrappedTokenGateway: "0x0df0Ff6bBC7F5F881cbA5310Ef90b033d47470c2",
+      pool: "",
+      oracle: "",
+      poolAddressesProvider: "",
+      uiPoolDataProvider: "",
+      poolDataProvider: "",
+      wrappedTokenGateway: "",
     },
   },
   tokens: KASPLEX_MAINNET_TOKENS,

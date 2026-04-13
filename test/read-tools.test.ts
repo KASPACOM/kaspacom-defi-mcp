@@ -72,8 +72,9 @@ describe("read tools", () => {
     });
 
     const singleTokenNetwork = {
-      ...KASPLEX_MAINNET,
-      tokens: { WKAS: KASPLEX_MAINNET.tokens.WKAS },
+      ...IGRA_TESTNET,
+      features: { ...IGRA_TESTNET.features, lending: true },
+      tokens: { WKAS: IGRA_TESTNET.tokens.WKAS },
     };
 
     const result = await getMarkets({}, singleTokenNetwork, rpc as never);
