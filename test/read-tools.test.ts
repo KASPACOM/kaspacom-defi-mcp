@@ -99,7 +99,7 @@ describe("read tools", () => {
     expect(data.markets[0].utilization).toBe("20%");
   });
 
-  it("getPairs queries subgraph and formats pair data", async () => {
+  it("getPairs queries subgraph with correct schema variant and formats pair data", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -109,22 +109,26 @@ describe("read tools", () => {
                 id: "0xpair",
                 token0: {
                   id: "0x0",
-                  symbol: "WKAS",
-                  name: "Wrapped Kaspa",
+                  symbol: "WiKAS",
+                  name: "Wrapped Igra Kaspa",
                   decimals: "18",
+                  derivedKAS: "1",
                 },
                 token1: {
                   id: "0x1",
-                  symbol: "USDC",
-                  name: "USD Coin",
-                  decimals: "6",
+                  symbol: "SPUDZ",
+                  name: "SPUDVERSE",
+                  decimals: "18",
+                  derivedKAS: "0.00002678",
                 },
                 reserve0: "1234.5678",
                 reserve1: "4321.25",
-                reserveUSD: "99999.12",
-                volumeUSD: "765432.1",
+                totalSupply: "2500.123",
+                reserveKAS: "2469.13",
                 token0Price: "3.5",
                 token1Price: "0.285714",
+                volumeKAS: "9500.5",
+                txCount: "42",
               },
             ],
           },
@@ -144,15 +148,24 @@ describe("read tools", () => {
         address: string;
         token0: { symbol: string; reserve: string };
         token1: { symbol: string; reserve: string };
-        reserveUSD: string;
+        reserveKAS: string;
+        volume: string;
+        txCount: string;
       }>;
     };
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(data.endpoint).toContain("igra-kas-v2-core");
     expect(data.pairs[0].address).toBe("0xpair");
-    expect(data.pairs[0].token0.symbol).toBe("WKAS");
-    expect(data.pairs[0].token1.symbol).toBe("USDC");
-    expect(data.pairs[0].reserveUSD).toBe("99999.12");
+    expect(data.pairs[0].token0.symbol).toBe("WiKAS");
+    expect(data.pairs[0].token1.symbol).toBe("SPUDZ");
+    expect(data.pairs[0].reserveKAS).toBe("2469.13");
+    expect(data.pairs[0].volume).toBe("9500.5");
+    expect(data.pairs[0].txCount).toBe("42");
+
+    // Verify the query uses KAS-variant fields
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.query).toContain("reserveKAS");
+    expect(body.query).not.toContain("reserveETH");
   });
 });

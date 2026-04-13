@@ -57,7 +57,11 @@ export async function getPortfolio(
       })
     );
 
-    const nativePrice = await getTokenPrice({ token: "WKAS" }, network, rpcClient);
+    // Use the correct wrapped KAS symbol for this network (WiKAS on IGRA mainnet, WKAS elsewhere)
+    const wrappedKasSymbol = Object.keys(network.tokens).find(
+      (s) => s.toUpperCase() === "WKAS" || s.toUpperCase() === "WIKAS"
+    ) ?? "WKAS";
+    const nativePrice = await getTokenPrice({ token: wrappedKasSymbol }, network, rpcClient);
     const nativePriceUsd = nativePrice.ok && nativePrice.data && typeof nativePrice.data === "object"
       ? Number((nativePrice.data as { priceUsd?: string }).priceUsd ?? 0)
       : null;

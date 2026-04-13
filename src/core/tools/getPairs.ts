@@ -5,34 +5,46 @@ import { formatDecimal, success, failure, type ToolResult } from "./shared.js";
 
 interface PairNode {
   id: string;
-  token0: { id: string; symbol: string; name: string; decimals: string };
-  token1: { id: string; symbol: string; name: string; decimals: string };
+  token0: { id: string; symbol: string; name: string; decimals: string; derivedKAS?: string; derivedETH?: string };
+  token1: { id: string; symbol: string; name: string; decimals: string; derivedKAS?: string; derivedETH?: string };
   reserve0: string;
   reserve1: string;
-  reserveUSD: string;
-  volumeUSD: string;
+  totalSupply: string;
+  reserveKAS?: string;
+  reserveETH?: string;
   token0Price: string;
   token1Price: string;
+  volumeKAS?: string;
+  volumeUSD?: string;
+  txCount: string;
 }
 
 interface PairsResponse {
   pairs: PairNode[];
 }
 
-const PAIRS_QUERY = `
+function buildPairsQuery(variant: "kas" | "eth"): string {
+  const reserveField = variant === "kas" ? "reserveKAS" : "reserveETH";
+  const volumeField = variant === "kas" ? "volumeKAS" : "volumeUSD";
+  const derivedField = variant === "kas" ? "derivedKAS" : "derivedETH";
+
+  return `
 {
-  pairs(first: 100, orderBy: reserveUSD, orderDirection: desc) {
+  pairs(first: 100, orderBy: ${reserveField}, orderDirection: desc) {
     id
-    token0 { id symbol name decimals }
-    token1 { id symbol name decimals }
+    token0 { id symbol name decimals ${derivedField} }
+    token1 { id symbol name decimals ${derivedField} }
     reserve0
     reserve1
-    reserveUSD
-    volumeUSD
+    totalSupply
+    ${reserveField}
     token0Price
     token1Price
+    ${volumeField}
+    txCount
   }
 }`;
+}
 
 export async function getPairs(
   params: Record<string, unknown>,
@@ -43,7 +55,9 @@ export async function getPairs(
     const rawLimit = typeof params.limit === "number" ? params.limit : Number(params.limit ?? 20);
     const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(100, rawLimit)) : 20;
     const endpoint = getDexSubgraphEndpoint(network);
-    const data = await querySubgraph<PairsResponse>(endpoint, PAIRS_QUERY);
+    const variant = network.subgraphSchemaVariant;
+    const query = buildPairsQuery(variant);
+    const data = await querySubgraph<PairsResponse>(endpoint, query);
 
     return success(network, {
       endpoint,
@@ -66,8 +80,10 @@ export async function getPairs(
           reserve: formatDecimal(Number(pair.reserve1)),
           priceInToken0: formatDecimal(Number(pair.token1Price)),
         },
-        reserveUSD: formatDecimal(Number(pair.reserveUSD), 2),
-        volumeUSD: formatDecimal(Number(pair.volumeUSD), 2),
+        totalSupply: formatDecimal(Number(pair.totalSupply)),
+        reserveKAS: formatDecimal(Number(pair.reserveKAS ?? pair.reserveETH ?? 0), 2),
+        volume: formatDecimal(Number(pair.volumeKAS ?? pair.volumeUSD ?? 0), 2),
+        txCount: pair.txCount,
       })),
     });
   } catch (error: unknown) {

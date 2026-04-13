@@ -47,7 +47,10 @@ describe("network and contract config sanity", () => {
 
   it("keeps token and contract addresses internally consistent", () => {
     for (const network of listNetworks()) {
-      expect(network.tokens.WKAS.address).toBe(network.contracts.wkas);
+      // Wrapped KAS token may be WKAS or WiKAS depending on network
+      const wrappedKas = network.tokens.WKAS ?? network.tokens.WiKAS;
+      expect(wrappedKas).toBeDefined();
+      expect(wrappedKas.address).toBe(network.contracts.wkas);
       expect(network.contracts.wkas).toMatch(ADDRESS_RE);
       expect(network.rpc).toMatch(/^https:\/\//);
       expect(network.subgraphUrl).toMatch(/^https:\/\//);
@@ -85,7 +88,7 @@ describe("network and contract config sanity", () => {
     ).toBe("USDC");
 
     expect(() => requireToken(IGRA_MAINNET, "USDC")).toThrowError(
-      'Token "USDC" not found on network "igra". Available: WKAS'
+      'Token "USDC" not found on network "igra". Available: WiKAS'
     );
   });
 

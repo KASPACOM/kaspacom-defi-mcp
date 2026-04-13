@@ -44,7 +44,11 @@ export interface NetworkConfig {
   explorer: string;
   subgraphUrl: string;
   dexSubgraphName: string;
+  /** Network name for api-defi.kaspa.com endpoints. Only "igra" and "kasplex" are supported (no testnet). */
+  defiApiNetwork: string | null;
   launchpadApiNetwork: string;
+  /** Subgraph schema variant: "kas" uses reserveKAS/derivedKAS, "eth" uses reserveETH/derivedETH (legacy testnet) */
+  subgraphSchemaVariant: "kas" | "eth";
   features: NetworkFeatures;
   contracts: NetworkContracts;
   tokens: Record<string, TokenInfo>;
@@ -93,7 +97,9 @@ export const IGRA_TESTNET: NetworkConfig = {
   explorer: "https://explorer.galleon-testnet.igralabs.com",
   subgraphUrl: "https://dev-graph-igra.kaspa.com",
   dexSubgraphName: "igra-testnet-v2-core",
+  defiApiNetwork: null,
   launchpadApiNetwork: "igra",
+  subgraphSchemaVariant: "eth",
   features: {
     dex: true,
     lending: true,
@@ -123,8 +129,8 @@ export const GALLEON_TESTNET = IGRA_TESTNET;
 // ─── IGRA Mainnet (chainId 38833) ────────────────────────────────────────────
 
 const IGRA_MAINNET_TOKENS: Record<string, TokenInfo> = {
-  WKAS: {
-    symbol: "WKAS",
+  WiKAS: {
+    symbol: "WiKAS",
     address: "0x17Ec7E1768c813E2a3a9b0f94A35605CA520C242",
     decimals: 18,
   },
@@ -138,7 +144,9 @@ export const IGRA_MAINNET: NetworkConfig = {
   explorer: "https://explorer.igralabs.com",
   subgraphUrl: "https://graph-igra.kaspa.com",
   dexSubgraphName: "igra-kas-v2-core",
+  defiApiNetwork: "igra",
   launchpadApiNetwork: "igra",
+  subgraphSchemaVariant: "kas",
   features: {
     dex: true,
     lending: false,
@@ -206,7 +214,9 @@ export const KASPLEX_TESTNET: NetworkConfig = {
   explorer: "https://explorer.testnet.kasplextest.xyz",
   subgraphUrl: "https://dev-graph-kasplex.kaspa.com",
   dexSubgraphName: "kasplex-testnet-kas-new-v2-core",
+  defiApiNetwork: null,
   launchpadApiNetwork: "kasplex",
+  subgraphSchemaVariant: "kas",
   features: {
     dex: true,
     lending: true,
@@ -289,7 +299,9 @@ export const KASPLEX_MAINNET: NetworkConfig = {
   explorer: "https://explorer.kasplex.org/",
   subgraphUrl: "https://graph-kasplex.kaspa.com",
   dexSubgraphName: "kasplex-kas-v2-core",
+  defiApiNetwork: "kasplex",
   launchpadApiNetwork: "kasplex",
+  subgraphSchemaVariant: "kas",
   features: {
     dex: true,
     lending: true,
@@ -365,7 +377,13 @@ export function getToken(
   network: NetworkConfig,
   symbol: string
 ): TokenInfo | undefined {
-  return network.tokens[symbol.toUpperCase()];
+  // Try exact match first, then case-insensitive
+  const direct = network.tokens[symbol] ?? network.tokens[symbol.toUpperCase()];
+  if (direct) return direct;
+  const upper = symbol.toUpperCase();
+  return Object.values(network.tokens).find(
+    (t) => t.symbol.toUpperCase() === upper
+  );
 }
 
 export function listNetworks(): NetworkConfig[] {

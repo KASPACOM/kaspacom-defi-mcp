@@ -3,8 +3,18 @@
   "version": "0.1.0",
   "description": "MCP server + CLI for KaspaCom DeFi Protocol — DEX, Lending, Launchpad on IGRA/Kasplex mainnet + testnet",
   "main": "dist/mcp/index.js",
+  "types": "dist/mcp/index.d.ts",
   "bin": {
     "kaspacom-defi": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "AGENTS.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "build": "tsc",

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GALLEON_TESTNET, IGRA_MAINNET } from "../src/core/contracts.js";
+import { GALLEON_TESTNET, IGRA_MAINNET, KASPLEX_MAINNET } from "../src/core/contracts.js";
 import { getActiveLaunches } from "../src/core/tools/getActiveLaunches.js";
 import { executeReadTool } from "../src/core/tools/index.js";
 import { getPairs } from "../src/core/tools/getPairs.js";
@@ -38,25 +38,29 @@ describe("extended read tool coverage", () => {
           pairs: [
             {
               id: "0xpair-1",
-              token0: { id: "0x0", symbol: "WKAS", name: "Wrapped Kaspa", decimals: "18" },
-              token1: { id: "0x1", symbol: "USDC", name: "USD Coin", decimals: "6" },
+              token0: { id: "0x0", symbol: "WKAS", name: "Wrapped Kaspa", decimals: "18", derivedETH: "1" },
+              token1: { id: "0x1", symbol: "USDC", name: "USD Coin", decimals: "6", derivedETH: "0.5" },
               reserve0: "10",
               reserve1: "20",
-              reserveUSD: "30",
-              volumeUSD: "40",
+              reserveETH: "30",
+              totalSupply: "100",
               token0Price: "2",
               token1Price: "0.5",
+              volumeUSD: "40",
+              txCount: "5",
             },
             {
               id: "0xpair-2",
-              token0: { id: "0x2", symbol: "WETH", name: "Wrapped Ether", decimals: "18" },
-              token1: { id: "0x1", symbol: "USDC", name: "USD Coin", decimals: "6" },
+              token0: { id: "0x2", symbol: "WETH", name: "Wrapped Ether", decimals: "18", derivedETH: "2" },
+              token1: { id: "0x1", symbol: "USDC", name: "USD Coin", decimals: "6", derivedETH: "0.5" },
               reserve0: "11",
               reserve1: "22",
-              reserveUSD: "33",
-              volumeUSD: "44",
+              reserveETH: "33",
+              totalSupply: "200",
               token0Price: "3",
               token1Price: "0.333333",
+              volumeUSD: "44",
+              txCount: "10",
             },
           ],
         },
@@ -75,57 +79,66 @@ describe("extended read tool coverage", () => {
     expect((resultMax.data as { pairs: unknown[] }).pairs).toHaveLength(2);
   });
 
-  it("getTokenPrice resolves recursive USD pricing through a stable pair", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: {
-              pairs: [
-                {
-                  token0: { id: GALLEON_TESTNET.tokens.WKAS.address.toLowerCase(), symbol: "WKAS" },
-                  token1: { id: GALLEON_TESTNET.tokens.WETH.address.toLowerCase(), symbol: "WETH" },
-                  token0Price: "0.5",
-                  token1Price: "2",
-                  reserveUSD: "5000",
-                },
-              ],
+  it("getTokenPrice uses api-defi for prod networks", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          tokens: [
+            {
+              id: KASPLEX_MAINNET.tokens.WKAS.address.toLowerCase(),
+              symbol: "WKAS",
+              name: "Wrapped KAS",
+              decimals: "18",
+              tokenPriceUSD: 0.0523,
+              marketCapUSD: 1250000.5,
             },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        )
+          ],
+          pagination: { first: 500, skip: 0, count: 1, total: 1 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
       )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: {
-              pairs: [
-                {
-                  token0: { id: GALLEON_TESTNET.tokens.WETH.address.toLowerCase(), symbol: "WETH" },
-                  token1: { id: GALLEON_TESTNET.tokens.USDC.address.toLowerCase(), symbol: "USDC" },
-                  token0Price: "3000",
-                  token1Price: "0.0003333333",
-                  reserveUSD: "250000",
-                },
-              ],
-            },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        )
-      );
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getTokenPrice({ token: "WKAS" }, KASPLEX_MAINNET, createRpcStub() as never);
+
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({
+      token: "WKAS",
+      priceUsd: "0.0523",
+      marketCapUsd: "1250000.5",
+      source: "api-defi",
+    });
+  });
+
+  it("getTokenPrice falls back to subgraph derivedKAS on testnet", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: {
+            tokens: [
+              {
+                id: GALLEON_TESTNET.tokens.WKAS.address.toLowerCase(),
+                symbol: "WKAS",
+                derivedETH: "1",
+              },
+            ],
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
 
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await getTokenPrice({ token: "WKAS" }, GALLEON_TESTNET, createRpcStub() as never);
 
     expect(result.ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result.data).toMatchObject({
       token: "WKAS",
-      priceUsd: "1500",
-      pairLiquidityUsd: "5000",
-      sourcePair: { token0: "WKAS", token1: "WETH" },
+      priceInKas: "1",
+      source: "subgraph",
     });
   });
 
@@ -139,57 +152,57 @@ describe("extended read tool coverage", () => {
     });
   });
 
-  it("getActiveLaunches supports both array and nested data payload shapes", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
+  it("getActiveLaunches parses LFG search API response", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: true,
+          result: [
             {
-              tokenName: "Array Launch",
-              symbol: "ARR",
-              address: "0xarray",
-              bondingCurveProgress: 12.3456,
-              currentPrice: 0.123456789,
-              marketCap: 12345.678,
+              tokenAddress: "0xtoken1",
+              ticker: "SPUDZ",
+              name: "SPUDVERSE",
+              state: "graduated",
+              price: 0.00002656,
+              marketCap: 762236.78,
+              progress: 100,
+              holderCount: 423,
+              volume: { "1h": 0, "1d": 15841.25 },
+              priceChange: { "1d": -6.61 },
+              socials: { telegram: "SpudzByNotshore" },
+              image: "bafkreig47rbe5mx6bg7rqlr2qtk6mfmtxlnaoj273fepdhazxonxb3qk5q",
+              createdAt: "2026-03-31T07:14:53.938Z",
+              updatedAt: "2026-04-13T07:07:00.291Z",
             },
-          ]),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        )
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
       )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: [
-              {
-                name: "Nested Launch",
-                tokenSymbol: "NEST",
-                tokenAddress: "0xnested",
-                progress: 98.7654,
-                price: 1.23456789,
-                marketCap: 76543.21,
-              },
-            ],
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        )
-      );
+    );
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const arrayResult = await getActiveLaunches({}, GALLEON_TESTNET, createRpcStub() as never);
-    const nestedResult = await getActiveLaunches({}, GALLEON_TESTNET, createRpcStub() as never);
+    const result = await getActiveLaunches({}, IGRA_MAINNET, createRpcStub() as never);
 
-    expect(arrayResult.ok).toBe(true);
-    expect(arrayResult.data).toMatchObject({
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({
       count: 1,
-      launches: [{ tokenName: "Array Launch", symbol: "ARR", bondingCurveProgress: "12.35" }],
+      launches: [
+        {
+          ticker: "SPUDZ",
+          name: "SPUDVERSE",
+          state: "graduated",
+          marketCap: "762236.78",
+          progress: "100",
+          holderCount: 423,
+          volume24h: "15841.25",
+          priceChange24h: "-6.61",
+        },
+      ],
     });
 
-    expect(nestedResult.ok).toBe(true);
-    expect(nestedResult.data).toMatchObject({
-      count: 1,
-      launches: [{ tokenName: "Nested Launch", symbol: "NEST", currentPrice: "1.23456789" }],
-    });
+    // Verify correct API endpoint
+    expect(fetchMock.mock.calls[0][0]).toContain("/explorer/lfg-tokens/search");
+    expect(fetchMock.mock.calls[0][0]).toContain("network=igra");
   });
 });
