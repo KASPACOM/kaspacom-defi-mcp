@@ -6,6 +6,7 @@ import {
   KASPLEX_MAINNET,
   KASPLEX_TESTNET,
   getNetwork,
+  getToken,
   getTokenByAddress,
   listNetworks,
   requireToken,
@@ -86,6 +87,8 @@ describe("network and contract config sanity", () => {
     expect(
       getTokenByAddress(IGRA_TESTNET, "0xFEE6EE271C2FD76EDAD5DE7B8177C3935799111A")?.symbol
     ).toBe("USDC");
+    expect(getToken(IGRA_MAINNET, "WKAS")?.address).toBe(IGRA_MAINNET.contracts.wkas);
+    expect(requireToken(IGRA_MAINNET, "WKAS").symbol).toBe("WiKAS");
 
     expect(() => requireToken(IGRA_MAINNET, "USDC")).toThrowError(
       'Token "USDC" not found on network "igra". Available: WiKAS'

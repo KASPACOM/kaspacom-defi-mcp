@@ -356,9 +356,22 @@ export function getToken(
   const direct = network.tokens[symbol] ?? network.tokens[symbol.toUpperCase()];
   if (direct) return direct;
   const upper = symbol.toUpperCase();
-  return Object.values(network.tokens).find(
+  const bySymbol = Object.values(network.tokens).find(
     (t) => t.symbol.toUpperCase() === upper
   );
+  if (bySymbol) return bySymbol;
+
+  // Users and docs often call the wrapped KAS token WKAS, while IGRA mainnet
+  // exposes it as WiKAS. Keep WKAS as a portable alias for the network's
+  // configured wrapped KAS contract.
+  if (upper === "WKAS") {
+    const wrappedKasAddress = network.contracts.wkas.toLowerCase();
+    return Object.values(network.tokens).find(
+      (t) => t.address.toLowerCase() === wrappedKasAddress
+    );
+  }
+
+  return undefined;
 }
 
 export function listNetworks(): NetworkConfig[] {
