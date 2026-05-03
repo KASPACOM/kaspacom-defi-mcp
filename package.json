@@ -39,6 +39,9 @@
     "type": "git",
     "url": "git+https://github.com/KASPACOM/kaspacom-defi-mcp.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "commander": "^12.0.0",
