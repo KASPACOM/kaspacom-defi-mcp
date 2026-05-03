@@ -70,7 +70,7 @@ export async function getPairs(
           name: pair.token0.name,
           decimals: Number(pair.token0.decimals),
           reserve: formatDecimal(Number(pair.reserve0)),
-          priceInToken1: formatDecimal(Number(pair.token0Price)),
+          priceInToken1: formatDecimal(Number(pair.token1Price)),
         },
         token1: {
           address: pair.token1.id,
@@ -78,7 +78,7 @@ export async function getPairs(
           name: pair.token1.name,
           decimals: Number(pair.token1.decimals),
           reserve: formatDecimal(Number(pair.reserve1)),
-          priceInToken0: formatDecimal(Number(pair.token1Price)),
+          priceInToken0: formatDecimal(Number(pair.token0Price)),
         },
         totalSupply: formatDecimal(Number(pair.totalSupply)),
         reserveKAS: formatDecimal(Number(pair.reserveKAS ?? pair.reserveETH ?? 0), 2),

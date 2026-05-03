@@ -147,8 +147,8 @@ describe("read tools", () => {
       endpoint: string;
       pairs: Array<{
         address: string;
-        token0: { symbol: string; reserve: string };
-        token1: { symbol: string; reserve: string };
+        token0: { symbol: string; reserve: string; priceInToken1: string };
+        token1: { symbol: string; reserve: string; priceInToken0: string };
         reserveKAS: string;
         volume: string;
         txCount: string;
@@ -160,6 +160,8 @@ describe("read tools", () => {
     expect(data.pairs[0].address).toBe("0xpair");
     expect(data.pairs[0].token0.symbol).toBe("WiKAS");
     expect(data.pairs[0].token1.symbol).toBe("SPUDZ");
+    expect(data.pairs[0].token0.priceInToken1).toBe("0.285714");
+    expect(data.pairs[0].token1.priceInToken0).toBe("3.5");
     expect(data.pairs[0].reserveKAS).toBe("2469.13");
     expect(data.pairs[0].volume).toBe("9500.5");
     expect(data.pairs[0].txCount).toBe("42");
