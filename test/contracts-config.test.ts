@@ -64,14 +64,31 @@ describe("network and contract config sanity", () => {
         expect(network.contracts.dex.routerPermitFee).toMatch(ADDRESS_RE);
       }
 
-      const lendingAddresses = Object.values(network.contracts.lending);
+      const lending = network.contracts.lending;
+      const requiredLendingAddresses = [
+        lending.pool,
+        lending.oracle,
+        lending.poolAddressesProvider,
+        lending.uiPoolDataProvider,
+        lending.poolDataProvider,
+        lending.wrappedTokenGateway,
+      ];
+      const optionalLendingAddresses = [
+        lending.kaskadPriceOracle,
+        lending.kaskadRouter,
+        lending.uiDataProviderWrapper,
+      ].filter((address): address is string => Boolean(address));
       if (network.features.lending) {
-        expect(lendingAddresses).toHaveLength(6);
-        for (const address of lendingAddresses) {
+        for (const address of [...requiredLendingAddresses, ...optionalLendingAddresses]) {
           expect(address).toMatch(ADDRESS_RE);
         }
+        if (lending.kaskadEnclaveApiUrl) {
+          expect(lending.kaskadEnclaveApiUrl).toMatch(/^https:\/\//);
+        }
       } else {
-        expect(lendingAddresses.every((address) => address === "")).toBe(true);
+        expect(requiredLendingAddresses.every((address) => address === "")).toBe(true);
+        expect(optionalLendingAddresses).toHaveLength(0);
+        expect(lending.kaskadEnclaveApiUrl).toBeUndefined();
       }
 
       for (const token of Object.values(network.tokens)) {

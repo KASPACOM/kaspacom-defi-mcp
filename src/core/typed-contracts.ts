@@ -52,6 +52,12 @@ const AAVE_POOL_ABI = [
   "function getReserveData(address asset) view returns (uint256 configuration, uint128 liquidityIndex, uint128 currentLiquidityRate, uint128 variableBorrowIndex, uint128 currentVariableBorrowRate, uint128 currentStableBorrowRate, uint40 lastUpdateTimestamp, uint16 id, address aTokenAddress, address stableDebtTokenAddress, address variableDebtTokenAddress, address interestRateStrategyAddress, uint128 accruedToTreasury, uint128 unbacked, uint128 isolationModeTotalDebt)",
 ];
 
+const UI_DATA_PROVIDER_WRAPPER_ABI = [
+  "function getUserAccountData((bytes32 assetId,uint256 price,uint256 timestamp,uint8 numSources,bytes32 sourcesHash,bytes signature)[] updates,address provider,address user)",
+  "error ResultData(bytes)",
+  "error PriceUpdateFailed(bytes32,bytes)",
+];
+
 const WRAPPED_TOKEN_GATEWAY_ABI = [
   "function depositETH(address pool, address onBehalfOf, uint16 referralCode) payable",
   "function withdrawETH(address pool, uint256 amount, address to)",
@@ -64,7 +70,11 @@ export const ROUTER_IFACE = new Interface(UNISWAP_V2_ROUTER_ABI);
 export const FACTORY_IFACE = new Interface(UNISWAP_V2_FACTORY_ABI);
 export const PAIR_IFACE = new Interface(UNISWAP_V2_PAIR_ABI);
 export const AAVE_POOL_IFACE = new Interface(AAVE_POOL_ABI);
+export const UI_DATA_PROVIDER_WRAPPER_IFACE = new Interface(UI_DATA_PROVIDER_WRAPPER_ABI);
 export const WRAPPED_GATEWAY_IFACE = new Interface(WRAPPED_TOKEN_GATEWAY_ABI);
+
+const RESULT_DATA_ERROR_SELECTOR = UI_DATA_PROVIDER_WRAPPER_IFACE.getError("ResultData")!.selector.toLowerCase();
+const PRICE_UPDATE_FAILED_ERROR_SELECTOR = UI_DATA_PROVIDER_WRAPPER_IFACE.getError("PriceUpdateFailed")!.selector.toLowerCase();
 
 // ─── Decode helper ────────────────────────────────────────────────────────────
 
@@ -310,6 +320,74 @@ export function aavePool(address: string): AavePoolContract & { address: string 
     decodeGetReserveData: (data) =>
       decodeResult(AAVE_POOL_IFACE, "getReserveData", data),
   };
+}
+
+// ─── UiDataProviderWrapper ────────────────────────────────────────────────────
+
+export interface KaskadPriceUpdate {
+  assetId: string;
+  price: bigint;
+  timestamp: bigint;
+  numSources: number;
+  sourcesHash: string;
+  signature: string;
+}
+
+export interface UiDataProviderWrapperContract {
+  encodeGetUserAccountData(
+    updates: KaskadPriceUpdate[],
+    poolAddressesProvider: string,
+    user: string
+  ): string;
+  isResultDataError(errorData: string): boolean;
+  decodeResultData(errorData: string): string;
+  describeKnownError(errorData: string): string | undefined;
+}
+
+export function uiDataProviderWrapper(
+  address: string
+): UiDataProviderWrapperContract & { address: string } {
+  return {
+    address,
+    encodeGetUserAccountData: (updates, poolAddressesProvider, user) =>
+      UI_DATA_PROVIDER_WRAPPER_IFACE.encodeFunctionData("getUserAccountData", [
+        updates.map((update) => [
+          update.assetId,
+          update.price,
+          update.timestamp,
+          update.numSources,
+          update.sourcesHash,
+          update.signature,
+        ]),
+        poolAddressesProvider,
+        user,
+      ]),
+    isResultDataError: (errorData) => getErrorSelector(errorData) === RESULT_DATA_ERROR_SELECTOR,
+    decodeResultData: (errorData) => {
+      if (getErrorSelector(errorData) !== RESULT_DATA_ERROR_SELECTOR) {
+        throw new Error("UiDataProviderWrapper revert data is not ResultData(bytes)");
+      }
+      return String(UI_DATA_PROVIDER_WRAPPER_IFACE.decodeErrorResult("ResultData", errorData)[0]);
+    },
+    describeKnownError: (errorData) => describeUiDataProviderWrapperError(errorData),
+  };
+}
+
+function getErrorSelector(errorData: string): string | undefined {
+  return /^0x[0-9a-fA-F]{8}/.test(errorData) ? errorData.slice(0, 10).toLowerCase() : undefined;
+}
+
+function describeUiDataProviderWrapperError(errorData: string): string | undefined {
+  if (getErrorSelector(errorData) !== PRICE_UPDATE_FAILED_ERROR_SELECTOR) {
+    return undefined;
+  }
+
+  const decoded = UI_DATA_PROVIDER_WRAPPER_IFACE.decodeErrorResult("PriceUpdateFailed", errorData);
+  const assetId = String(decoded[0]);
+  const reasonData = String(decoded[1]);
+  return "UiDataProviderWrapper Kaskad price update failed for asset " +
+    `${assetId}; refresh/retry the Kaskad relayer price bundle. ` +
+    `Underlying revert data: ${reasonData}`;
 }
 
 // ─── WrappedTokenGateway ──────────────────────────────────────────────────────

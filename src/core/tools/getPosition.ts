@@ -1,6 +1,6 @@
 import type { NetworkConfig } from "../contracts.js";
 import type { RpcClient } from "../rpc.js";
-import { aavePool } from "../typed-contracts.js";
+import { getFreshUserAccountData } from "./aaveAccountData.js";
 import {
   formatAaveBase,
   formatPercent,
@@ -26,12 +26,7 @@ export async function getPosition(
   }
 
   try {
-    const pool = aavePool(network.contracts.lending.pool);
-    const accountDataHex = await rpcClient.ethCall(
-      pool.address,
-      pool.encodeGetUserAccountData(wallet)
-    );
-    const accountData = pool.decodeGetUserAccountData(accountDataHex);
+    const accountData = await getFreshUserAccountData(network, rpcClient, wallet);
 
     return success(network, {
       address: wallet,
