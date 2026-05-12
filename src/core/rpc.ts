@@ -15,7 +15,24 @@ import { MIN_GAS_PRICE } from "./contracts.js";
 export interface RpcError {
   code: number;
   message: string;
-  data?: string;
+  data?: unknown;
+}
+
+export class RpcCallError extends Error {
+  readonly code: number;
+  readonly rpcMessage: string;
+  readonly data?: string;
+
+  constructor(code: number, message: string, data?: string) {
+    super(
+      `RPC error ${code}: ${message}` +
+        (data ? ` (data: ${data})` : "")
+    );
+    this.name = "RpcCallError";
+    this.code = code;
+    this.rpcMessage = message;
+    this.data = data;
+  }
 }
 
 export interface TransactionReceipt {
@@ -96,10 +113,10 @@ export class RpcClient {
     };
 
     if (json.error) {
-      throw new Error(
-        `RPC error ${json.error.code}: ${json.error.message}` +
-          (json.error.data ? ` (data: ${json.error.data})` : "")
-      );
+      const errorData = typeof json.error.data === "string"
+        ? json.error.data
+        : undefined;
+      throw new RpcCallError(json.error.code, json.error.message, errorData);
     }
 
     return json.result as T;

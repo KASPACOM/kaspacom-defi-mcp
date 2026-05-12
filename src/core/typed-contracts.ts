@@ -52,6 +52,11 @@ const AAVE_POOL_ABI = [
   "function getReserveData(address asset) view returns (uint256 configuration, uint128 liquidityIndex, uint128 currentLiquidityRate, uint128 variableBorrowIndex, uint128 currentVariableBorrowRate, uint128 currentStableBorrowRate, uint40 lastUpdateTimestamp, uint16 id, address aTokenAddress, address stableDebtTokenAddress, address variableDebtTokenAddress, address interestRateStrategyAddress, uint128 accruedToTreasury, uint128 unbacked, uint128 isolationModeTotalDebt)",
 ];
 
+const UI_DATA_PROVIDER_WRAPPER_ABI = [
+  "function getUserAccountData((bytes32 assetId,uint256 price,uint256 timestamp,uint8 numSources,bytes32 sourcesHash,bytes signature)[] updates,address provider,address user)",
+  "error ResultData(bytes)",
+];
+
 const WRAPPED_TOKEN_GATEWAY_ABI = [
   "function depositETH(address pool, address onBehalfOf, uint16 referralCode) payable",
   "function withdrawETH(address pool, uint256 amount, address to)",
@@ -64,6 +69,7 @@ export const ROUTER_IFACE = new Interface(UNISWAP_V2_ROUTER_ABI);
 export const FACTORY_IFACE = new Interface(UNISWAP_V2_FACTORY_ABI);
 export const PAIR_IFACE = new Interface(UNISWAP_V2_PAIR_ABI);
 export const AAVE_POOL_IFACE = new Interface(AAVE_POOL_ABI);
+export const UI_DATA_PROVIDER_WRAPPER_IFACE = new Interface(UI_DATA_PROVIDER_WRAPPER_ABI);
 export const WRAPPED_GATEWAY_IFACE = new Interface(WRAPPED_TOKEN_GATEWAY_ABI);
 
 // ─── Decode helper ────────────────────────────────────────────────────────────
@@ -309,6 +315,49 @@ export function aavePool(address: string): AavePoolContract & { address: string 
       AAVE_POOL_IFACE.encodeFunctionData("getReserveData", [asset]),
     decodeGetReserveData: (data) =>
       decodeResult(AAVE_POOL_IFACE, "getReserveData", data),
+  };
+}
+
+// ─── UiDataProviderWrapper ────────────────────────────────────────────────────
+
+export interface KaskadPriceUpdate {
+  assetId: string;
+  price: bigint;
+  timestamp: bigint;
+  numSources: number;
+  sourcesHash: string;
+  signature: string;
+}
+
+export interface UiDataProviderWrapperContract {
+  encodeGetUserAccountData(
+    updates: KaskadPriceUpdate[],
+    poolAddressesProvider: string,
+    user: string
+  ): string;
+  decodeResultData(errorData: string): string;
+}
+
+export function uiDataProviderWrapper(
+  address: string
+): UiDataProviderWrapperContract & { address: string } {
+  return {
+    address,
+    encodeGetUserAccountData: (updates, poolAddressesProvider, user) =>
+      UI_DATA_PROVIDER_WRAPPER_IFACE.encodeFunctionData("getUserAccountData", [
+        updates.map((update) => [
+          update.assetId,
+          update.price,
+          update.timestamp,
+          update.numSources,
+          update.sourcesHash,
+          update.signature,
+        ]),
+        poolAddressesProvider,
+        user,
+      ]),
+    decodeResultData: (errorData) =>
+      String(UI_DATA_PROVIDER_WRAPPER_IFACE.decodeErrorResult("ResultData", errorData)[0]),
   };
 }
 

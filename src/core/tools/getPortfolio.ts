@@ -1,7 +1,8 @@
 import type { NetworkConfig } from "../contracts.js";
 import type { RpcClient } from "../rpc.js";
-import { aavePool, erc20 } from "../typed-contracts.js";
+import { erc20 } from "../typed-contracts.js";
 import { getTokenPrice } from "./getTokenPrice.js";
+import { getFreshUserAccountData } from "./aaveAccountData.js";
 import {
   formatAaveBase,
   formatDecimal,
@@ -74,12 +75,7 @@ export async function getPortfolio(
     let lendingNetUsd = 0;
 
     if (network.features.lending) {
-      const pool = aavePool(network.contracts.lending.pool);
-      const accountDataHex = await rpcClient.ethCall(
-        pool.address,
-        pool.encodeGetUserAccountData(wallet)
-      );
-      const accountData = pool.decodeGetUserAccountData(accountDataHex);
+      const accountData = await getFreshUserAccountData(network, rpcClient, wallet);
       const collateral = Number(formatAaveBase(accountData.totalCollateralBase));
       const debt = Number(formatAaveBase(accountData.totalDebtBase));
       lendingNetUsd = collateral - debt;

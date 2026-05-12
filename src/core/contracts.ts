@@ -33,6 +33,14 @@ export interface NetworkContracts {
     uiPoolDataProvider: string;
     poolDataProvider: string;
     wrappedTokenGateway: string;
+    /** Kaskad oracle contract used by Galleon Aave to validate signed price updates. */
+    kaskadPriceOracle?: string;
+    /** Kaskad router contract for signed price update routing. */
+    kaskadRouter?: string;
+    /** Wrapper that simulates Kaskad price updates and returns Aave/UI results via ResultData(bytes). */
+    uiDataProviderWrapper?: string;
+    /** Oracle relayer/enclave API returning signed Kaskad PriceUpdate tuples. */
+    kaskadEnclaveApiUrl?: string;
   };
 }
 
@@ -114,6 +122,10 @@ export const IGRA_TESTNET: NetworkConfig = {
       uiPoolDataProvider: "0xCC79B6e8F0389720c099E9621724AEBc97828436",
       poolDataProvider: "0xc6b4592171EC79192f838E4050a2453D4D71fBAe",
       wrappedTokenGateway: "0x89F4834CEe75f53dFb9F717362DC1a574966632e",
+      kaskadPriceOracle: "0x869764619f0eDA0076Ece6eec2C3509ce01717E1",
+      kaskadRouter: "0x7F5712A982e09b4CE43f2B98d8ffE43Db61214aF",
+      uiDataProviderWrapper: "0x7b7E99Bd96b99d47B72B08866c1cD16c678E5372",
+      kaskadEnclaveApiUrl: "https://oracle.kaskad.live",
     },
   },
   tokens: IGRA_TESTNET_TOKENS,
