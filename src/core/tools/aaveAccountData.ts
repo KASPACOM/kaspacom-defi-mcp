@@ -76,8 +76,17 @@ export async function getFreshUserAccountData(
       throw error;
     }
 
-    const accountDataHex = wrapper.decodeResultData(revertData);
-    return pool.decodeGetUserAccountData(accountDataHex);
+    if (wrapper.isResultDataError(revertData)) {
+      const accountDataHex = wrapper.decodeResultData(revertData);
+      return pool.decodeGetUserAccountData(accountDataHex);
+    }
+
+    const knownWrapperError = wrapper.describeKnownError(revertData);
+    if (knownWrapperError) {
+      throw new Error(knownWrapperError);
+    }
+
+    throw error;
   }
 
   throw new Error("UiDataProviderWrapper.getUserAccountData unexpectedly returned without ResultData(bytes)");
@@ -93,6 +102,9 @@ export async function fetchKaskadPriceUpdates(apiUrl: string): Promise<KaskadPri
   const json = await response.json() as KaskadRelayerResponse;
   if (!Array.isArray(json.prices)) {
     throw new Error("Kaskad relayer response missing prices array");
+  }
+  if (json.prices.length === 0) {
+    throw new Error("Kaskad relayer response prices array is empty; refusing to call UiDataProviderWrapper without price updates");
   }
 
   return json.prices.map((price, index) => normalizeKaskadPriceUpdate(price, index));
